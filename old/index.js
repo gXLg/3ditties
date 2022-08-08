@@ -4,32 +4,50 @@
   const { eq, unitVector, Vector } = require("./math.js");
 
   const light = {
-    "from": [20, 30, 10],
+    "from": [20, 40, 10],
     "power": 15
   };
 
   const screen = [40, 40];
-  const state = ".,-~+^*!:;=?%&@#"; // 0 - 15
+  const state = ".,-~+:;!?=%&@#";
+  //const state = ".-+#@";
 
   const bodies = [
-    //new Donut(0, 0, 40, 5, 15),
-    //new RectPlane(0, - 40, 40, 200, 200),
-    //new Sphere(0, 0, 40, 8)
-    new Plane(0, 0, 40, [
-      new Vector(10, - 10, - 2),
-      new Vector(10, 10, - 2),
-      new Vector(- 10, 10, - 2),
-      new Vector(- 5, 0, - 2),
-      new Vector(- 10, - 10, - 2)
+    new RectPlane(0, 0, 200, 1000, 1000),
+    new Donut(0, 0, 100, 10, 20),
+
+    //new Sphere(0, 0, 100, 10),
+    //new Box(0, 0, 100, 20, 20, 20)
+    /*new Plane(0, 0, 100, [
+      new Vector(- 30, - 30, - 30),
+      new Vector(30, - 30, - 30),
+      new Vector(0, 30, - 30)
     ]),
-    new Plane(0, 0, 40, [
-      new Vector(- 2, - 10, - 10),
-      new Vector(- 2, 10, - 10),
-      new Vector(10, 0, - 10)
-    ]).rot(null, null, Math.PI / 2)
+    new Plane(0, 0, 100, [
+      new Vector(30, - 30, - 30),
+      new Vector(0, 30, - 30),
+      new Vector(0, 0, 30)
+    ]),
+    new Plane(0, 0, 100, [
+      new Vector(0, 30, - 30),
+      new Vector(0, 0, 30),
+      new Vector(- 30, - 30, - 30)
+    ]),
+    new Plane(0, 0, 100, [
+      new Vector(0, 0, 30),
+      new Vector(- 30, - 30, - 30),
+      new Vector(30, - 30, - 30)
+    ])*/
+    // PENIS
+
+    //new Sphere(0, 0, 100, 17).setOrig(new Vector(- 12, - 20, 0)),
+    //new Sphere(0, 0, 100, 17).setOrig(new Vector(12, - 20, 0)),
+    //new Box(0, 0, 100, 20, 60, 15).setOrig(new Vector(0, 17, 0)),
+    //new Box(0, 17, 100, 20, 60, 15),
+    //new Sphere(0, 0, 100, 14).setOrig(new Vector(0, 40, 0))
   ];
 
-  const fov = 20;
+  const fov = 50;
   const phi = Math.PI * fov / 360;
   const K = (screen[0] / 2) / Math.tan(phi);
 
@@ -37,24 +55,18 @@
   const yawCycles = 100;
   const rollCycles = 800;
 
-  //bodies[0].rot(null, null, - 0.8);
-  //bodies[1].rot(null, null, - 0.8);
-
   while(true){
-    bodies[0].rot(...[
-      , //1 / pitchCycles * 2 * Math.PI,
-      , //1 / rollCycles * 2 * Math.PI,
-      1 / yawCycles * 2 * Math.PI
-    ]);
-    bodies[1].rot(...[
-      , //1 / pitchCycles * 2 * Math.PI,
-      1 / rollCycles * 2 * Math.PI,
-      1 / yawCycles * 2 * Math.PI
-    ]);
+    for(const b of [1]){
+      bodies[b].rot(...[
+        1 / pitchCycles * 2 * Math.PI,
+        1 / rollCycles * 2 * Math.PI,
+        1 / yawCycles * 2 * Math.PI
+      ]);
+    }
     await render();
     //break;
 
-    await new Promise(r => setTimeout(r, 10));
+    //await new Promise(r => setTimeout(r, 10));
   }
 
   async function render(){
@@ -96,7 +108,7 @@
             const S2 = L.add(V.mul(i));
             if(eq(S1.x, S2.x) && eq(S1.y, S2.y) && eq(S1.z, S2.z)){
               const theta = body.angle(L, S1);
-              const lvl = Math.round(light.power * theta / Math.PI);
+              const lvl = Math.floor((state.length - 1) * theta / Math.PI);
               row.push(state[lvl]);
             } else row.push(state[0]);
           }
