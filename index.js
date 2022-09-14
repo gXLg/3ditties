@@ -21,7 +21,16 @@ const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
 
     new Sphere(
       new Vec3D(30, 0, 2), null, 2
-    )
+    ),
+    new Sphere(
+      new Vec3D(30, 4, 2), null, 2
+    ),
+    new Sphere(
+      new Vec3D(30, 8, 2), null, 2
+    ),
+    new Sphere(
+      new Vec3D(30, 16, 2), null, 2
+    ),
   ];
 
   const lights = [
@@ -78,8 +87,8 @@ const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
     fps ++;
     setTimeout(() => { fps --; }, 1000);
 
+    IOTools.clear();
     process.stdout.write(
-      "\x1b[H\x1b[2J\x1b[3J" +
       frame + "\n" +
       "FPS: " + fps + "\n" +
       "Ticks Skipped: " + (ticks - 1) + "\n" +

@@ -77,7 +77,8 @@ class KeyListener {
 }
 
 const IOTools = {
-  "cursor": s => process.stdout.write("\x1b[?25" + (s ? "h" : "l"))
+  "cursor": s => process.stdout.write("\x1b[?25" + (s ? "h" : "l")),
+  "clear": () => process.stdout.write("\x1b[H\x1b[2J\x1b[3J")
 }
 
 module.exports = { Key, Keys, KeyListener, IOTools };
