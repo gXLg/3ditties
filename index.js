@@ -21,8 +21,8 @@ const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
 
   const box = new GhostObject(
     new Parallelepiped(
-      new Vec3D(0, 0, 0),
-      new Vec3D(1, 1, 1),
+      new Vec3D(0, 0, 2),
+      new Vec3D(1, 1, 3),
       new Vec3D(2, 0, 0),
       new Vec3D(0, 2, 0),
       new Vec3D(0, 0, 2)
@@ -51,7 +51,6 @@ const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
   IOTools.cursor(false);
 
   let fps = 0;
-
   async function userPhase(ticks){
 
     const key = listener.getKey();
@@ -79,12 +78,10 @@ const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
   }
 
   async function workingPhase(ticks){
+    box.rotate(new Quat(0.05, new Vec3D(0, 1, 1).unit));
   }
 
-  let a = 0;
   async function renderPhase(ticks){
-
-    a = Math.max(a, ticks);
 
     const frame = screen.render();
 
@@ -95,7 +92,7 @@ const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
     process.stdout.write(
       frame + "\n" +
       "FPS: " + fps + "\n" +
-      "Ticks Skipped: " + (a - 1) + "\n" +
+      "Ticks Skipped: " + (ticks - 1) + "\n" +
       "Cords: " + camera.cords.x + " " + camera.cords.y + " " + camera.cords.z + "\n" +
       "World Objects: " + world.objects.length + "\n"
     );
