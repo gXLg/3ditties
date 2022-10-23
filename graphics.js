@@ -1,13 +1,7 @@
 const { Vec3D, Ray, Quat } = require("./math.js");
-const { PhysicalWorldObject, AbstractWorldObject } = require("./world.js");
+const { Movable } = require("./world.js");
 
-class LightSource extends AbstractWorldObject {
-  constructor(cords){
-    super(cords);
-  }
-}
-
-class Camera extends AbstractWorldObject {
+class Camera extends Movable {
   constructor(width, height, fov, world){
 
     super(new Vec3D(0, 0, height / 2));
@@ -29,7 +23,7 @@ class Camera extends AbstractWorldObject {
       new Vec3D(x, y, z).rotate(this.rotation).unit
     );
 
-    const int = this.world.objects.filter(o => o instanceof PhysicalWorldObject)
+    const int = this.world.visual()
       .map(s => {
         const i = s.intersects(camRay);
         // no intersects
@@ -54,13 +48,13 @@ class Camera extends AbstractWorldObject {
     const c = camRay.dir.mul(- 1).unit;
     const phi = Math.acos(Math.min(1, c.dot(surface) / (c.abs * surface.abs)));
 
-    return Math.min(1, this.world.objects.filter(o => o instanceof LightSource)
+    return Math.min(1, this.world.light()
       .map(light => {
         const l = cut.sub(light.cords).unit;
         const l2 = l.mul(- 1);
         const lightRay = new Ray(light.cords, l);
 
-        const int2 = this.world.objects.filter(o => o instanceof PhysicalWorldObject)
+        const int2 = this.world.visual()
           .map(s => {
             const i = s.intersects(lightRay);
             // no intersects
@@ -128,4 +122,4 @@ class Screen {
   }
 }
 
-module.exports = { Camera, Screen, LightSource };
+module.exports = { Camera, Screen };

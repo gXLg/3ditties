@@ -1,7 +1,7 @@
 const { solveQuartic, Vec3D, Ray, Quat } = require("./math.js");
-const { PhysicalWorldObject } = require("./world.js");
+const { Movable } = require("./world.js");
 
-class Shape extends PhysicalWorldObject {
+class Shape extends Movable {
   constructor(cords, orig){
     super(cords);
 
@@ -11,7 +11,8 @@ class Shape extends PhysicalWorldObject {
   rotate(rot){
     super.rotate(rot);
     // rotate center around orig
-    this.cords = this.cords.sub(this.orig).rotate(rot.unitNorm).add(this.orig);
+    this.cords = this.cords.sub(this.orig)
+      .rotate(rot.unitNorm).add(this.orig);
     return this;
   }
 }
@@ -38,8 +39,10 @@ class Sphere extends ImplicitShape {
 
     if(D > 0){
       return [
-        Math.round(((- b + Math.sqrt(D)) / (2 * a)) * 1e7) / 1e7,
-        Math.round(((- b - Math.sqrt(D)) / (2 * a)) * 1e7) / 1e7
+        Math.round(
+          ((- b + Math.sqrt(D)) / (2 * a)) * 1e7) / 1e7,
+        Math.round(
+          ((- b - Math.sqrt(D)) / (2 * a)) * 1e7) / 1e7
       ];
     } else if(D == 0){
       return [Math.round((- b / (2 * a)) * 1e7) / 1e7];
@@ -49,26 +52,11 @@ class Sphere extends ImplicitShape {
   surface(ray, point){
     return point.sub(this.cords).unit;
   }
-}
 
-/*
-class Donut extends ImplicitShape {
-  constructor(cords, orig, radius, thickness){
-    super(cords, orig);
-
-    this.radius = radius;
-    this.thickness = thickness;
-  }
-
-  intersects(ray){
-
-  }
-
-  surface(ray, point){
-
+  inside(point){
+    return point.sub(this.cords).abs < this.radius;
   }
 }
-*/
 
 class Plane extends ImplicitShape {
   constructor(cords, orig, normal){
@@ -94,6 +82,10 @@ class Plane extends ImplicitShape {
   surface(ray, point){
     return this.normal;
   }
+
+  inside(point){
+    return !point.sub(this.cords).dot(this.normal);
+  }
 }
 
 class Parallelogram extends Plane {
@@ -112,9 +104,14 @@ class Parallelogram extends Plane {
   intersects(ray){
     const t = super.intersects(ray)[0];
     if(t == undefined) return [];
-    const cut = ray.point(t);
 
-    const o = cut.sub(this.cords);
+    if(this.inside(ray.point(t)))
+      return [t];
+    return [];
+  }
+
+  inside(point){
+    const o = point.sub(this.cords);
 
     const pn = this.p.cross(this.normal).unit;
     const po = pn.mul(this.q.dot(pn));
@@ -122,11 +119,10 @@ class Parallelogram extends Plane {
     const qn = this.q.cross(this.normal).unit;
     const qo = qn.mul(this.p.dot(qn));
 
-    if(
+    return (
       0 <= o.dot(po) && o.dot(po) <= po.dot(po) &&
       0 <= o.dot(qo) && o.dot(qo) <= qo.dot(qo)
-    ) return [t];
-    return [];
+    );
   }
 }
 
@@ -139,10 +135,14 @@ class Disc extends Plane {
   intersects(ray){
     const t = super.intersects(ray)[0];
     if(t == undefined) return [];
-    const cut = ray.point(t);
 
-    if(cut.sub(this.cords).abs <= this.radius) return [t];
+    if(this.inside(ray.point(t)))
+      return [t];
     return [];
+  }
+
+  inside(point){
+    return point.sub(this.cords).abs <= this.radius;
   }
 }
 
@@ -153,10 +153,13 @@ class Polygon extends Plane {
     if(points.length < 3)
       throw new Error("Not enough points for a plane");
 
-    const normal = points[1].sub(points[0]).cross(points[2].sub(points[0])).unit;
+    const normal = points[1].sub(points[0]).cross(
+      points[2].sub(points[0])).unit;
 
     for(let i = 3; i < points.length; i ++)
-      if(normal.cross(points[1].sub(points[0]).cross(points[i].sub(points[0]))).abs != 0)
+      if(normal.cross(
+        points[1].sub(points[0]).cross(
+          points[i].sub(points[0]))).abs != 0)
         throw new Error("Points do not lie on the same plane!" + i);
 
     super(points[0], orig, normal);
@@ -166,16 +169,22 @@ class Polygon extends Plane {
 
   rotate(rot){
     super.rotate(rot);
-    this.points = this.points.map(p => p.sub(this.orig).rotate(rot.unitNorm).add(this.orig));
+    this.points = this.points.map(p =>
+      p.sub(this.orig).rotate(rot.unitNorm).add(this.orig));
   }
 
   intersects(ray){
     const t = super.intersects(ray)[0];
     if(t == undefined) return [];
-    const cut = ray.point(t);
 
+    if(this.inside(ray.point(t)))
+      return [t];
+    return [];
+  }
+
+  inside(point){
     const D = this.points[0].add(this.points[1]).div(2);
-    const p43 = D.sub(cut);
+    const p43 = D.sub(point);
 
     let intersect = 0;
 
@@ -186,10 +195,10 @@ class Polygon extends Plane {
 
       if(cut.equals(A)) return [t];
 
-      const para = B.sub(A).cross(D.sub(cut));
+      const para = B.sub(A).cross(p43);
       if(para.dot(para) == 0) continue;
 
-      const p13 = A.sub(cut);
+      const p13 = A.sub(point);
       const p21 = B.sub(A);
 
       const d1343 = p13.dot(p43);
@@ -216,8 +225,7 @@ class Polygon extends Plane {
 
     }
 
-    if(intersect % 2) return [t];
-    return [];
+    return !!(intersect % 2);
   }
 }
 
@@ -233,8 +241,16 @@ class ComposedShape extends Shape {
     this.shapes.forEach(shape => {
       shape.cords = shape.cords.add(this.cords.sub(shape.orig));
       shape.orig = this.cords;
+      shape.rotate(rot);
     });
-    this.shapes.forEach(shape => shape.rotate(rot));
+  }
+
+  moveGlobal(vec){
+    super.moveGlobal(vec);
+    this.shapes.forEach(shape => {
+      shape.moveGlobal(vec);
+      shape.orig = this.cords;
+    });
   }
 
   intersects(ray){
@@ -246,7 +262,7 @@ class ComposedShape extends Shape {
   surface(ray, point){
     for(const shape of this.shapes){
       const t = Math.min(...shape.intersects(ray));
-      if(t == undefined) continue;
+      if(t == Infinity) continue;
       if(ray.point(t).equals(point)) return shape.surface(ray, point);
     }
     const l = ray.dir.mul(- 1);
@@ -258,7 +274,6 @@ class ComposedShape extends Shape {
 
 class Parallelepiped extends ComposedShape {
   constructor(cords, orig, p, q, r){
-
     const shapes = [
       new Parallelogram(cords, null, p, q),
       new Parallelogram(cords, null, q, r),
@@ -268,6 +283,39 @@ class Parallelepiped extends ComposedShape {
       new Parallelogram(cords.add(q), null, r, p)
     ];
     super(cords, orig, shapes);
+
+    this.p = p;
+    this.q = q;
+    this.r = r;
+  }
+
+  rotate(rot){
+    super.rotate(rot);
+
+    this.p = this.p.rotate(rot.unitNorm);
+    this.q = this.q.rotate(rot.unitNorm);
+    this.r = this.r.rotate(rot.unitNorm);
+  }
+
+  inside(point){
+    const s = point.sub(this.cords);
+
+    const u = this.p.cross(this.q);
+    const v = this.q.cross(this.r);
+    const w = this.r.cross(this.p);
+
+    const p = (a, b) => {
+      if(a == 0) return true;
+      if(a * b > 0)
+        return Math.abs(a) <= Math.abs(b);
+      return false;
+    };
+
+    return (
+      p(u.dot(s), u.dot(this.r)) &&
+      p(v.dot(s), v.dot(this.p)) &&
+      p(w.dot(s), w.dot(this.q))
+    );
   }
 }
 

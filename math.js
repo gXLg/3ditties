@@ -108,7 +108,9 @@ class Quat {
 
   get norm(){
     if(!this._norm){
-      this._norm = Math.round(Math.sqrt(this.scalar ** 2 + this.vector.dot(this.vector)) * 1e7) / 1e7;
+      this._norm = Math.round(
+        Math.sqrt(this.scalar ** 2 + this.vector.dot(this.vector)) * 1e7
+      ) / 1e7;
     }
     return this._norm;
   }
@@ -228,22 +230,6 @@ class Ray {
 }
 
 /*
-class Rotation {
-  constructor(pitch, roll, yaw){
-    this.pitch = pitch;
-    this.roll = roll;
-    this.yaw = yaw;
-  }
-  get neg(){
-    return new Rotation(
-      - this.pitch, - this.roll, - this.yaw
-    );
-  }
-}
-*/
-
-
-/*
   Applies to following:
 
   This script and many more are available free online at
@@ -275,7 +261,7 @@ function _solve(aq, bq, cq, dq, eq){
   let aq2 = aq;
   let bq2 = bq;
 
-  // Define Perfect Quartic Varible
+  // Define Perfect Quartic Variables
   let perfect = 0;
   let perfectbiquadratic = 0;
 

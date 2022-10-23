@@ -64,7 +64,7 @@ class KeyListener {
       const a = stroke[0];
       const b = stroke[1];
       if(a == 27){
-        const k = parseStroke([b]);
+        const k = this.parseStroke([b]);
         k.alt = true;
         return k;
       }

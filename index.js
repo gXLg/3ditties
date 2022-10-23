@@ -8,37 +8,31 @@
 
 const { Sphere, Parallelogram, Disc, Polygon, Plane, Parallelepiped } = require("./body.js");
 const { Vec3D, Quat } = require("./math.js");
-const { Camera, Screen, LightSource } = require("./graphics.js");
+const { Camera, Screen } = require("./graphics.js");
 const { Keys, KeyListener, IOTools } = require("./keyboard.js");
-const { World } = require("./world.js");
+const { World, WorldObject, LightObject, GhostObject } = require("./world.js");
 const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
 
 (async () => {
 
-  const shapes = [
-    // floor
-    new Plane(new Vec3D(0, 0, 0), null, new Vec3D(0, 0, 1)),
+  const floor = new GhostObject(
+    new Plane(new Vec3D(0, 0, 0), null, new Vec3D(0, 0, 1))
+  );
 
-    new Sphere(
-      new Vec3D(30, 0, 2), null, 2
-    ),
-    new Sphere(
-      new Vec3D(30, 4, 2), null, 2
-    ),
-    new Sphere(
-      new Vec3D(30, 8, 2), null, 2
-    ),
-    new Sphere(
-      new Vec3D(30, 16, 2), null, 2
-    ),
-  ];
+  const box = new GhostObject(
+    new Parallelepiped(
+      new Vec3D(0, 0, 0),
+      new Vec3D(1, 1, 1),
+      new Vec3D(2, 0, 0),
+      new Vec3D(0, 2, 0),
+      new Vec3D(0, 0, 2)
+    )
+  );
 
-  const lights = [
-    new LightSource(new Vec3D(- 10, 10, 10))
-  ];
+  const light = new LightObject(new Vec3D(- 10, 10, 10));
 
   const world = new World();
-  world.addObjects(...shapes, ...lights);
+  world.addObjects(floor, box, light);
 
   const camera = new Camera(2, 2, 60, world);
 
@@ -71,6 +65,12 @@ const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
     if(key.key == Keys.Q) camera.rotate(new Quat(- 0.05, new Vec3D(0, 0, 1)));
     if(key.key == Keys.E) camera.rotate(new Quat(0.05, new Vec3D(0, 0, 1)));
 
+    if(key.key == Keys.I) box.moveGlobal(new Vec3D(0, 0, 0.1));
+    if(key.key == Keys.J) box.moveGlobal(new Vec3D(0, 0, - 0.1));
+
+    if(key.key == Keys.H) box.rotate(new Quat(0.05, new Vec3D(0, 0, 1)));
+    if(key.key == Keys.K) box.rotate(new Quat(- 0.05, new Vec3D(0, 0, 1)));
+
     if(key.key == Keys.X){
       ticker.stop();
       listener.stop();
@@ -78,9 +78,13 @@ const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
     }
   }
 
-  async function workingPhase(ticks){ }
+  async function workingPhase(ticks){
+  }
 
+  let a = 0;
   async function renderPhase(ticks){
+
+    a = Math.max(a, ticks);
 
     const frame = screen.render();
 
@@ -91,7 +95,7 @@ const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
     process.stdout.write(
       frame + "\n" +
       "FPS: " + fps + "\n" +
-      "Ticks Skipped: " + (ticks - 1) + "\n" +
+      "Ticks Skipped: " + (a - 1) + "\n" +
       "Cords: " + camera.cords.x + " " + camera.cords.y + " " + camera.cords.z + "\n" +
       "World Objects: " + world.objects.length + "\n"
     );

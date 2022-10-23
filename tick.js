@@ -26,7 +26,6 @@ class Ticker {
   }
 
   async tick(){
-
     this.ticks ++;
     if(this.ticking) return;
     this.ticking = true;

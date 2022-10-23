@@ -19,7 +19,10 @@ Currently supported features:
 * ANSI Escapes for fast canvas redrawing
 * FPS and Tick Skip statistics
 
+Working on currently:
+* Collision system
+* WorldObject structure to support different types of objects
+
 Probably features will be added in the future:
-* Collision System
 * Physics
 * Player structure
