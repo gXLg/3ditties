@@ -21,8 +21,8 @@ const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
 
   const box = new GhostObject(
     new Parallelepiped(
-      new Vec3D(0, 0, 2),
-      new Vec3D(1, 1, 3),
+      new Vec3D(6, - 1, 2),
+      new Vec3D(7, 0, 3),
       new Vec3D(2, 0, 0),
       new Vec3D(0, 2, 0),
       new Vec3D(0, 0, 2)
@@ -78,7 +78,7 @@ const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
   }
 
   async function workingPhase(ticks){
-    box.rotate(new Quat(0.05, new Vec3D(0, 1, 1).unit));
+    box.rotate(new Quat(0.05, new Vec3D(0.2, 1, 1).unit));
   }
 
   async function renderPhase(ticks){
