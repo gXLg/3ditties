@@ -11,7 +11,7 @@ To see the progress with your own eyes
 write `node .` in your terminal.
 
 Movement inside the simulation is `WASD`, rotation uses `QE`,
-You can move the floating cube up and down with `IJ` respectively.
+move the floating cube up and down with `IJ` respectively.
 To exit the 3D engine, type the letter `X`.
 
 Currently supported features:
