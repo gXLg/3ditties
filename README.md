@@ -2,6 +2,8 @@
 
 # 3ditties
 
+![logo](https://repository-images.githubusercontent.com/479563116/39c0ac48-7294-48a4-b1f7-7f596b2ecf03)
+
 A node.js 3D engine based on text output.
 Currently supported features:
 * A buildin Math library
