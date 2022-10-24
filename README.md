@@ -1,6 +1,6 @@
 "What else would you expect from a nerd?"
 
-# text-render
+# 3ditties
 
 A node.js 3D engine based on text output.
 Currently supported features:
@@ -19,10 +19,10 @@ Currently supported features:
 * ANSI Escapes for fast canvas redrawing
 * FPS and Tick Skip statistics
 
-Working on currently:
+Currently working on:
 * Collision system
 * WorldObject structure to support different types of objects
 
-Probably features will be added in the future:
+Features will be probably added in the future:
 * Physics
 * Player structure
