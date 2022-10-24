@@ -5,6 +5,15 @@
 ![logo](https://repository-images.githubusercontent.com/479563116/39c0ac48-7294-48a4-b1f7-7f596b2ecf03)
 
 A node.js 3D engine based on text output.
+Right now it is in active development
+and is not available as a module.
+To see the progress with your own eyes
+write `node .` in your terminal.
+
+Movement inside the simulation is `WASD`, rotation uses `QE`,
+You can move the floating cube up and down with `IJ` respectively.
+To exit the 3D engine, type the letter `X`.
+
 Currently supported features:
 * A buildin Math library
 * ... With advanced Vector and Quaternion calculations
