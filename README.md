@@ -29,11 +29,14 @@ Currently supported features:
 * Output using ASCII thickness
 * ANSI Escapes for fast canvas redrawing
 * FPS and Tick Skip statistics
+* Well structured system of world objects
+
 
 Currently working on:
 * Collision system
-* WorldObject structure to support different types of objects
+* ... Movement collision is ready for most of the objects
+* ... Rotation collision is yet not started
+* Player structure
 
 Features will be probably added in the future:
 * Physics
-* Player structure

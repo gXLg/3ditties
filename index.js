@@ -10,29 +10,54 @@ const { Sphere, Parallelogram, Disc, Polygon, Plane, Parallelepiped } = require(
 const { Vec3D, Quat } = require("./math.js");
 const { Camera, Screen } = require("./graphics.js");
 const { Keys, KeyListener, IOTools } = require("./keyboard.js");
-const { World, WorldObject, LightObject, GhostObject } = require("./world.js");
+const { World, WorldObject, LightObject, GhostObject, ColliderObject } = require("./world.js");
 const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
+
+//const { RadialCollider } = require("./collision.js");
 
 (async () => {
 
-  const floor = new GhostObject(
-    new Plane(new Vec3D(0, 0, 0), null, new Vec3D(0, 0, 1))
+  const world = new World();
+
+  const floor = new ColliderObject(
+    new Plane(new Vec3D(0, 0, 0), null, new Vec3D(0, 0, 1)), world
   );
 
-  const box = new GhostObject(
+  const box = new ColliderObject(
     new Parallelepiped(
-      new Vec3D(6, - 1, 2),
+      new Vec3D(6, - 1, 10),
       new Vec3D(7, 0, 3),
       new Vec3D(2, 0, 0),
       new Vec3D(0, 2, 0),
       new Vec3D(0, 0, 2)
-    )
+    ), world
   );
+
+  const sphere1 = new ColliderObject(
+    new Sphere(new Vec3D(6, - 1, 2), null, 2),
+    world
+  );
+
+  /*const sphere2 = new ColliderObject(
+    new Sphere(new Vec3D(6, - 1, 7), null, 1.7),
+    world
+  );*/
+
+  /*const rect = new ColliderObject(
+    new Parallelogram(
+      new Vec3D(6, - 1, 7), null,
+      new Vec3D(0, 2, 1),
+      new Vec3D(0, 0, 4)
+    ), world
+  );*/
+
+  /*const corners = rect.visual.points().map(p => new GhostObject(
+    new Sphere(p, null, 0.5)
+  ));*/
 
   const light = new LightObject(new Vec3D(- 10, 10, 10));
 
-  const world = new World();
-  world.addObjects(floor, box, light);
+  world.addObjects(floor, box, /*rect,*/ light, sphere1 /*, sphere2*/);
 
   const camera = new Camera(2, 2, 60, world);
 
@@ -64,11 +89,11 @@ const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
     if(key.key == Keys.Q) camera.rotate(new Quat(- 0.05, new Vec3D(0, 0, 1)));
     if(key.key == Keys.E) camera.rotate(new Quat(0.05, new Vec3D(0, 0, 1)));
 
-    if(key.key == Keys.I) box.moveGlobal(new Vec3D(0, 0, 0.1));
-    if(key.key == Keys.J) box.moveGlobal(new Vec3D(0, 0, - 0.1));
+    if(key.key == Keys.I) sphere1.moveGlobal(new Vec3D(0, 0, 0.1));
+    if(key.key == Keys.J) sphere1.moveGlobal(new Vec3D(0, 0, - 0.1));
 
-    if(key.key == Keys.H) box.rotate(new Quat(0.05, new Vec3D(0, 0, 1)));
-    if(key.key == Keys.K) box.rotate(new Quat(- 0.05, new Vec3D(0, 0, 1)));
+    if(key.key == Keys.H) sphere1.rotate(new Quat(0.05, new Vec3D(0, 0, 1)));
+    if(key.key == Keys.K) sphere1.rotate(new Quat(- 0.05, new Vec3D(0, 0, 1)));
 
     if(key.key == Keys.X){
       ticker.stop();
@@ -78,7 +103,7 @@ const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
   }
 
   async function workingPhase(ticks){
-    box.rotate(new Quat(0.05, new Vec3D(0.2, 1, 1).unit));
+    //box.rotate(new Quat(0.05, new Vec3D(0.2, 1, 1).unit));
   }
 
   async function renderPhase(ticks){
@@ -95,6 +120,7 @@ const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
       "Ticks Skipped: " + (ticks - 1) + "\n" +
       "Cords: " + camera.cords.x + " " + camera.cords.y + " " + camera.cords.z + "\n" +
       "World Objects: " + world.objects.length + "\n"
+      //+ RadialCollider.history.join("\n")
     );
   }
 

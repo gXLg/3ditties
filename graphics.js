@@ -8,13 +8,13 @@ class Camera extends Movable {
 
     this.width = width;
     this.height = height;
-    this.K = width / 2 / Math.tan(Math.PI * fov / 360);
+    this.fov = fov;
 
     this.world = world;
   }
 
   getLightLevel(cx, cy){
-    const x = this.K;
+    const x = this.width / 2 / Math.tan(Math.PI * this.fov / 360);
     const y = cx - this.width / 2;
     const z = this.height / 2 - cy;
 

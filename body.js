@@ -1,5 +1,6 @@
 const { solveQuartic, Vec3D, Ray, Quat } = require("./math.js");
 const { Movable } = require("./world.js");
+const { RadialCollider, PlaneCollider, PointsCollider } = require("./collision.js");
 
 class Shape extends Movable {
   constructor(cords, orig){
@@ -24,6 +25,8 @@ class ImplicitShape extends Shape {
 }
 
 class Sphere extends ImplicitShape {
+  collider = RadialCollider;
+
   constructor(cords, orig, radius){
     super(cords, orig);
     this.radius = radius;
@@ -59,6 +62,8 @@ class Sphere extends ImplicitShape {
 }
 
 class Plane extends ImplicitShape {
+  collider = PlaneCollider;
+
   constructor(cords, orig, normal){
     super(cords, orig);
     this.normal = normal ?? new Vec3D(1, 0, 0);
@@ -89,6 +94,8 @@ class Plane extends ImplicitShape {
 }
 
 class Parallelogram extends Plane {
+  collider = PointsCollider;
+
   constructor(cords, orig, p, q){
     super(cords, orig, p.cross(q).unit);
     this.p = p;
@@ -124,6 +131,15 @@ class Parallelogram extends Plane {
       0 <= o.dot(qo) && o.dot(qo) <= qo.dot(qo)
     );
   }
+
+  get points(){
+    return [
+      this.cords,
+      this.cords.add(this.p),
+      this.cords.add(this.q),
+      this.cords.add(this.p).add(this.q)
+    ];
+  }
 }
 
 class Disc extends Plane {
@@ -148,6 +164,8 @@ class Disc extends Plane {
 
 
 class Polygon extends Plane {
+  collider = PointsCollider;
+
   constructor(orig, points){
 
     if(points.length < 3)
@@ -164,7 +182,7 @@ class Polygon extends Plane {
 
     super(points[0], orig, normal);
 
-    this.points = points.concat(points[0]);
+    this.points = points;
   }
 
   rotate(rot){
@@ -188,10 +206,10 @@ class Polygon extends Plane {
 
     let intersect = 0;
 
-    for(let p = 0; p < this.points.length - 1; p ++){
+    for(let p = 0; p < this.points.length; p ++){
 
       const A = this.points[p];
-      const B = this.points[p + 1];
+      const B = this.points[(p + 1) % this.points.length];
 
       if(cut.equals(A)) return [t];
 
@@ -222,7 +240,6 @@ class Polygon extends Plane {
       // therefore no need
 
       intersect ++;
-
     }
 
     return !!(intersect % 2);
@@ -273,6 +290,8 @@ class ComposedShape extends Shape {
 }
 
 class Parallelepiped extends ComposedShape {
+  collider = PointsCollider;
+
   constructor(cords, orig, p, q, r){
     const shapes = [
       new Parallelogram(cords, null, p, q),
@@ -316,6 +335,19 @@ class Parallelepiped extends ComposedShape {
       p(v.dot(s), v.dot(this.p)) &&
       p(w.dot(s), w.dot(this.q))
     );
+  }
+
+  get points(){
+    return [
+      this.cords,
+      this.cords.add(this.p),
+      this.cords.add(this.q),
+      this.cords.add(this.r),
+      this.cords.add(this.p).add(this.q),
+      this.cords.add(this.q).add(this.r),
+      this.cords.add(this.r).add(this.p),
+      this.cords.add(this.p).add(this.q).add(this.r)
+    ];
   }
 }
 
