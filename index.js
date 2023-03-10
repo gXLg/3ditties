@@ -6,63 +6,40 @@
 
 */
 
-const { Sphere, Parallelogram, Disc, Polygon, Plane, Parallelepiped } = require("./body.js");
+const { Sphere, Parallelogram, Disc, Polygon, Plane, Parallelepiped, Torus } = require("./body.js");
 const { Vec3D, Quat } = require("./math.js");
-const { Camera, Screen } = require("./graphics.js");
+const { Camera, Screen, Label } = require("./graphics.js");
 const { Keys, KeyListener, IOTools } = require("./keyboard.js");
-const { World, WorldObject, LightObject, GhostObject, ColliderObject } = require("./world.js");
+const { World, WorldObject, LightObject, VisualObject } = require("./world.js");
 const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
-
-//const { RadialCollider } = require("./collision.js");
+const { Player } = require("./player.js");
 
 (async () => {
 
   const world = new World();
 
-  const floor = new ColliderObject(
+  const player = new Player(null, world);
+
+  const floor = new VisualObject(
     new Plane(new Vec3D(0, 0, 0), null, new Vec3D(0, 0, 1)), world
   );
 
-  const box = new ColliderObject(
-    new Parallelepiped(
-      new Vec3D(6, - 1, 10),
-      new Vec3D(7, 0, 3),
-      new Vec3D(2, 0, 0),
-      new Vec3D(0, 2, 0),
-      new Vec3D(0, 0, 2)
-    ), world
-  );
-
-  const sphere1 = new ColliderObject(
-    new Sphere(new Vec3D(6, - 1, 2), null, 2),
+  const object = new VisualObject(
+    new Torus(new Vec3D(6, 0, 2), null, 1.5, 0.2),
     world
   );
-
-  /*const sphere2 = new ColliderObject(
-    new Sphere(new Vec3D(6, - 1, 7), null, 1.7),
-    world
-  );*/
-
-  /*const rect = new ColliderObject(
-    new Parallelogram(
-      new Vec3D(6, - 1, 7), null,
-      new Vec3D(0, 2, 1),
-      new Vec3D(0, 0, 4)
-    ), world
-  );*/
-
-  /*const corners = rect.visual.points().map(p => new GhostObject(
-    new Sphere(p, null, 0.5)
-  ));*/
 
   const light = new LightObject(new Vec3D(- 10, 10, 10));
 
-  world.addObjects(floor, box, /*rect,*/ light, sphere1 /*, sphere2*/);
-
-  const camera = new Camera(2, 2, 60, world);
+  world.addObjects(floor, light, object, player);
 
   const screen = new Screen(50, 50);
-  screen.setCamera(camera);
+  screen.setCamera(player.cam);
+
+  const fps_label = new Label(2, 2, "FPS: %");
+  screen.addLabel(fps_label);
+  const ticks_label = new Label(2, 4, "Ticks Skipped: %");
+  screen.addLabel(ticks_label);
 
   const listener = new KeyListener();
   const ticker = new Ticker(1);
@@ -76,24 +53,27 @@ const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
   IOTools.cursor(false);
 
   let fps = 0;
+  let rot = "";
   async function userPhase(ticks){
 
     const key = listener.getKey();
     if(key == null) return;
 
-    if(key.key == Keys.W) camera.moveLocal(new Vec3D(0.5, 0, 0));
-    if(key.key == Keys.S) camera.moveLocal(new Vec3D(- 0.5, 0, 0));
-    if(key.key == Keys.A) camera.moveLocal(new Vec3D(0, - 0.5, 0));
-    if(key.key == Keys.D) camera.moveLocal(new Vec3D(0, 0.5, 0));
+    if(key.key == Keys.W) player.moveLocal(new Vec3D(0.5, 0, 0));
+    if(key.key == Keys.S) player.moveLocal(new Vec3D(- 0.5, 0, 0));
+    if(key.key == Keys.A) player.moveLocal(new Vec3D(0, - 0.5, 0));
+    if(key.key == Keys.D) player.moveLocal(new Vec3D(0, 0.5, 0));
 
-    if(key.key == Keys.Q) camera.rotate(new Quat(- 0.05, new Vec3D(0, 0, 1)));
-    if(key.key == Keys.E) camera.rotate(new Quat(0.05, new Vec3D(0, 0, 1)));
+    if(key.key == Keys.Q) rot = rot == "q" ? "" : "q";
+    if(key.key == Keys.E) rot = rot == "e" ? "" : "e";
 
-    if(key.key == Keys.I) sphere1.moveGlobal(new Vec3D(0, 0, 0.1));
-    if(key.key == Keys.J) sphere1.moveGlobal(new Vec3D(0, 0, - 0.1));
+    if(key.key == Keys.C) screen.setCamera(player.nextCam());
 
-    if(key.key == Keys.H) sphere1.rotate(new Quat(0.05, new Vec3D(0, 0, 1)));
-    if(key.key == Keys.K) sphere1.rotate(new Quat(- 0.05, new Vec3D(0, 0, 1)));
+    if(key.key == Keys.I) object.moveGlobal(new Vec3D(0, 0, 0.1));
+    if(key.key == Keys.J) object.moveGlobal(new Vec3D(0, 0, - 0.1));
+
+    if(key.key == Keys.H) object.rotate(new Quat(0.05, new Vec3D(0, 0, 1)));
+    if(key.key == Keys.K) object.rotate(new Quat(- 0.05, new Vec3D(0, 0, 1)));
 
     if(key.key == Keys.X){
       ticker.stop();
@@ -103,10 +83,18 @@ const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
   }
 
   async function workingPhase(ticks){
-    //box.rotate(new Quat(0.05, new Vec3D(0.2, 1, 1).unit));
+    if(rot == "e")
+      player.rotate(new Quat(0.05, new Vec3D(0, 0, 1)));
+    else if(rot == "q")
+      player.rotate(new Quat(- 0.05, new Vec3D(0, 0, 1)));
+
+    object.rotate(new Quat(0.09, new Vec3D(0.2, 1, 1).unit));
   }
 
   async function renderPhase(ticks){
+
+    fps_label.format(fps);
+    ticks_label.format(ticks - 1);
 
     const frame = screen.render();
 
@@ -116,11 +104,8 @@ const { Ticker, TickPhase, ProgressTickPhase } = require("./tick.js");
     IOTools.clear();
     process.stdout.write(
       frame + "\n" +
-      "FPS: " + fps + "\n" +
-      "Ticks Skipped: " + (ticks - 1) + "\n" +
-      "Cords: " + camera.cords.x + " " + camera.cords.y + " " + camera.cords.z + "\n" +
+      "Cords: " + player.cords.x + " " + player.cords.y + " " + player.cords.z + "\n" +
       "World Objects: " + world.objects.length + "\n"
-      //+ RadialCollider.history.join("\n")
     );
   }
 

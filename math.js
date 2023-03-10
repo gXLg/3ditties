@@ -1,17 +1,23 @@
+const precision = 1e5;
+
+function round(number){
+  return Math.round(number * precision) / precision;
+}
+
 class Vec3D {
   constructor(x, y, z){
-    this.x = Math.round(x * 1e7) / 1e7;
-    this.y = Math.round(y * 1e7) / 1e7;
-    this.z = Math.round(z * 1e7) / 1e7;
+    this.x = round(x);
+    this.y = round(y);
+    this.z = round(z);
   }
 
   get abs(){
     if(!this._abs){
-      this._abs = Math.round(Math.sqrt(
+      this._abs = round(Math.sqrt(
         this.x * this.x +
         this.y * this.y +
         this.z * this.z
-      ) * 1e7) / 1e7;
+      ));
     }
     return this._abs;
   }
@@ -24,11 +30,11 @@ class Vec3D {
   }
 
   dot(vec){
-    return Math.round((
+    return round(
       this.x * vec.x +
       this.y * vec.y +
       this.z * vec.z
-    ) * 1e7) / 1e7;
+    );
   }
 
   cross(vec){
@@ -71,20 +77,14 @@ class Vec3D {
     );
   }
 
-  /*rotate(Axx, Axy, Axz,
-         Ayx, Ayy, Ayz,
-         Azx, Azy, Azz){
+  project(vec){
+    return vec.unit.mul(this.dot(vec.unit));
+  }
 
-    const px = this.x;
-    const py = this.y;
-    const pz = this.z;
+  reject(vec){
+    return this.sub(this.project(vec));
+  }
 
-    const x = Axx * px + Axy * py + Axz * pz;
-    const y = Ayx * px + Ayy * py + Ayz * pz;
-    const z = Azx * px + Azy * py + Azz * pz;
-
-    return new Vec3D(x, y, z);
-  }*/
   rotate(rot){
     const p = new Quat(0, this);
 
@@ -102,15 +102,15 @@ class Vec3D {
 
 class Quat {
   constructor(scalar, vector){
-    this.scalar = Math.round(scalar * 1e7) / 1e7;
+    this.scalar = round(scalar);
     this.vector = vector;
   }
 
   get norm(){
     if(!this._norm){
-      this._norm = Math.round(
-        Math.sqrt(this.scalar ** 2 + this.vector.dot(this.vector)) * 1e7
-      ) / 1e7;
+      this._norm = round(
+        Math.sqrt(this.scalar ** 2 + this.vector.dot(this.vector))
+      );
     }
     return this._norm;
   }
@@ -186,39 +186,6 @@ class Quat {
   }
 }
 
-/*
-function rotMatrix(rot){
-  const pitch = rot.pitch;
-  const roll = rot.roll;
-  const yaw = rot.yaw;
-
-  const cosa = Math.cos(yaw);
-  const sina = Math.sin(yaw);
-
-  const cosb = Math.cos(pitch);
-  const sinb = Math.sin(pitch);
-
-  const cosc = Math.cos(roll);
-  const sinc = Math.sin(roll);
-
-  const Axx = cosa * cosb;
-  const Axy = cosa * sinb * sinc - sina * cosc;
-  const Axz = cosa * sinb * cosc + sina * sinc;
-
-  const Ayx = sina * cosb;
-  const Ayy = sina * sinb * sinc + cosa * cosc;
-  const Ayz = sina * sinb * cosc - cosa * sinc;
-
-  const Azx = - sinb;
-  const Azy = cosb * sinc;
-  const Azz = cosb * cosc;
-
-  return [Axx, Axy, Axz,
-          Ayx, Ayy, Ayz,
-          Azx, Azy, Azz];
-}
-*/
-
 class Ray {
   constructor(orig, dir){
     this.orig = orig;
@@ -230,300 +197,98 @@ class Ray {
 }
 
 /*
-  Applies to following:
-
-  This script and many more are available free online at
-  The JavaScript Source!! http://javascriptsource.com
-  Created by: Brian Kieffer | http://www.freewebs.com/brianjs/
-
-  Rewritten to nodejs by /dev/null | https://github.com/gXLg
+  Following code is written by /dev/null
+  from https://github.com/sasamil/Quartic/blob/master/quartic.cpp
 */
 
-function calcmult(a2, b2, c2, d2, e2){
-  const real = a2 * c2 - b2 * d2;
-  const img = b2 * c2 + a2 * d2;
-
-  if(e2 == 0) return real;
-  else return img;
-}
-
-function isquareroot(a1, b1, n1){
-  const y = Math.sqrt((a1 * a1) + (b1 * b1));
-  const y1 = Math.sqrt((y - a1) / 2);
-  const x1 = b1 / (2 * y1);
-
-  if(n1 == 0) return x1;
-  else return y1;
-}
-
-function _solve(aq, bq, cq, dq, eq){
-
-  let aq2 = aq;
-  let bq2 = bq;
-
-  // Define Perfect Quartic Variables
-  let perfect = 0;
-  let perfectbiquadratic = 0;
-
-  // The Bi-Quadratic 2 Perfect Squares that are negative test
-  if(cq * cq - 4 * aq * eq == 0 && cq > 0){
-    perfectbiquadratic = 1;
-  }
-
-  bq /= aq;
-  cq /= aq;
-  dq /= aq;
-  eq /= aq;
-  aq = 1;
-
-  const f2 = cq - (3 * bq * bq / 8);
-  const g2 = dq + (bq * bq * bq / 8) - (bq * cq / 2);
-  const h2 = eq - (3 * bq * bq * bq * bq / 256) + (bq * bq * (cq / 16)) - (bq * dq / 4);
-  const a = 1;
-  const b = f2 / 2;
-  const c = (f2 * f2 - (4 * h2)) / 16;
-  const d = -1 * ((g2 * g2) / 64);
-
-  if(b == 0 && c == 0 && d == 0) perfect = 1;
-
-  // Cubic routine starts here...
-  const f = (((3 * c) / a) - ((b * b) / (a * a))) / 3;
-  const g = (((2 * b * b * b) / (a * a * a)) - ((9 * b * c) / (a * a)) + ((27 * d) / a)) / 27;
-  const h = eval(((g * g) / 4) + ((f * f * f) / 27));
-  const z = 1 / 3;
-  let i, j, k, l, m, n;
-  let x1term;
-  let x2term;
-  let x3term;
-  let alreadydone = 0;
-  let alreadydone2 = 0;
-
-  let ipart = 0;
-  let p = 0;
-  let q = 0;
-  let p2, p2ipart, qipart;
-  let r = 0;
-  let s = 0;
-
-  if(h <= 0){
-    const exec = 2;
-    i = Math.sqrt(((g * g) / 4) - h);
-    j = Math.pow(i, z);
-    k = Math.acos(-1 * (g / (2 * i)));
-    l = - 1 * j;
-    m = Math.cos(k / 3);
-    n = Math.sqrt(3) * Math.sin(k / 3);
-    p = (b / (3 * a)) * -1;
-    x1term = (2 * j) * Math.cos(k / 3) - (b / (3 * a));
-    x2term = l * (m + n) + p;
-    x3term = l * (m - n) + p;
-  }
-
-  if(h > 0){
-    const exec = 1;
-    const R = (-1 * (g / 2)) + Math.sqrt(h);
-
-    let S, U;
-    if(R < 0){
-      S = -1 * (Math.pow((-1 * R), z));
-    } else {
-      S = Math.pow(R, z);
-    }
-
-    const T = (-1 * (g / 2)) - Math.sqrt(h);
-    if(T < 0){
-      U = -1 * (Math.pow((-1 * T), z));
-    } else {
-      U = Math.pow(T, z);
-    }
-
-    x1term = (S + U) - (b / (3 * a));
-    x2term = (-1 * (S + U) / 2) - (b / (3 * a));
-    ipart = ((S - U) * Math.sqrt(3)) / 2;
-    x3term = x2term;
-  }
-
-  if(f == 0 && g == 0 && h == 0){
-    if((d / a) < 0){
-      x1term = (Math.pow((-1 * (d / a)), z));
-      x2term = x1term;
-      x3term = x1term;
-    } else {
-      x1term = -1 * (Math.pow((d / a), z));
-      x2term = x1term;
-      x3term = x1term;
-    }
-  }
-  // ...and ends here.
-
-  // Return to solving the Quartic.
-  if(ipart == 0 && x1term.toFixed(8) == 0){
-    alreadydone2 = 1;
-    p2 = Math.sqrt(x2term);
-    q = Math.sqrt(x3term);
-    r = - g2 / (8 * p2 * q);
-    s = bq2 / (4 * aq2);
-  }
-
-  if(ipart == 0 && x2term.toFixed(8) == 0 && alreadydone2 == 0 && alreadydone2 != 1){
-    alreadydone2 = 2;
-    p2 = Math.sqrt(x1term);
-    q = Math.sqrt(x3term);
-    r = - g2 / (8 * p2 * q);
-    s = bq2 / (4 * aq2);
-  }
-
-  if(ipart == 0 && x3term.toFixed(8) == 0 && alreadydone2 == 0 && alreadydone2 != 1 && alreadydone2 != 2){
-    alreadydone2 = 3;
-    p2 = Math.sqrt(x1term);
-    q = Math.sqrt(x2term);
-    r = - g2 / (8 * p2 * q);
-    s = bq2 / (4 * aq2);
-  }
-
-  if(alreadydone2 == 0 && ipart == 0){
-    if(x3term.toFixed(8) < 0){
-      alreadydone2 = 4;
-      p2 = Math.sqrt(x1term);
-      q = Math.sqrt(x2term);
-      r = - g2 / (8 * p2 * q);
-      s = bq2 / (4 * aq2);
-    } else {
-      alreadydone2 = 5;
-      p2 = Math.sqrt(x1term.toFixed(8));
-      q = Math.sqrt(x3term.toFixed(8));
-      r = - g2 / (8 * p2 * q);
-      s = bq2 / (4 * aq2);
-    }
-  }
-
-  if(ipart != 0){
-    p2 = isquareroot(x2term, ipart, 0);
-    p2ipart = isquareroot(x2term, ipart, 1);
-    q = isquareroot(x3term, - ipart, 0);
-    qipart = isquareroot(x3term, - ipart, 1);
-    const mult = calcmult(p2, p2ipart, q, qipart, 0);
-    r = - g2 / (8 * mult);
-    s = bq2 / (4 * aq2);
-  }
-
-  if(ipart == 0 && x2term.toFixed(8) < 0 && x3term.toFixed(8) < 0){
-    x2term /= -1;
-    x3term /= -1;
-    p2 = 0;
-    q = 0;
-    p2ipart = Math.sqrt(x2term);
-    qipart = Math.sqrt(x3term);
-    const mult = calcmult(p2, p2ipart, q, qipart, 0);
-    r = - g2 / (8 * mult);
-    s = bq2 / (4 * aq2);
-    ipart = 1;
-  }
-
-  if(x1term.toFixed(8) > 0 && x2term.toFixed(8) < 0 && x3term.toFixed(8) == 0 && ipart == 0){
-    x2term /= -1;
-    p2 = Math.sqrt(x1term);
-    q = 0;
-    p2ipart = 0;
-    qipart = Math.sqrt(x2term);
-    const mult = calcmult(p2, p2ipart, q, qipart, 0);
-    const mult2 = calcmult(p2, p2ipart, q, qipart, 1);
-    r = - g2 / (8 * mult);
-    if(mult2 != 0){
-      //var ripart = g2 / (8 * mult2);
-      r = 0;
-    }
-    s = bq2 / (4 * aq2);
-    ipart = 1;
-  }
-
-  if(x2term.toFixed(8) == 0 && x3term.toFixed(8) == 0 && ipart == 0){
-    p2 = Math.sqrt(x1term);
-    q = 0;
-    r = 0;
-    s = bq2 / (4 * aq2);
-  }
-
-  if(ipart == 0){
+function solveCubic(a, b, c){
+  const a2 = a * a;
+  let q = (a2 - 3 * b) / 9;
+  const r = (a * (2 * a2 - 9 * b) + 27 * c) / 54;
+  const r2 = r * r;
+  const q3 = q ** 3;
+  let A, B;
+  if(r2 < q3){
+    let t = r / Math.sqrt(q3);
+    if(t < -1) t = -1;
+    if(t > 1) t = 1;
+    t = Math.acos(t);
+    const aa = a / 3;
+    q = -2 * Math.sqrt(q);
     return [
-      eval((p2 + q + r - s).toFixed(8)),
-      eval((p2 - q - r - s).toFixed(8)),
-      eval((- p2 + q - r - s).toFixed(8)),
-      eval((- p2 - q + r - s).toFixed(8))
+      q * Math.cos(t / 3) - aa,
+      q * Math.cos((t + Math.PI * 2) / 3) - aa,
+      q * Math.cos((t - Math.PI * 2) / 3) - aa
     ];
+  } else {
+    let A = -((Math.abs(r) + Math.sqrt(r2 - q3)) ** (1/3));
+    if(r < 0) A = -A;
+    const B = (0 == A ? 0 : q / A);
+    const aa = a / 3;
+    const x0 = (A + B) - aa;
+    const x1 = - (A + B) / 2 - aa;
+    const x2 = Math.sqrt(3) / 2 * (A - B);
+    if(round(x2) == 0) return [x0, x1];
+    return [x0];
   }
+}
 
-  if(perfect == 1) return [- bq / 4];
+function solveQuartic(a0, b0, c0, d0, e0){
+  const a = b0 / a0;
+  const b = c0 / a0;
+  const c = d0 / a0;
+  const d = e0 / a0;
 
-  if(ipart == 0 && x2term.toFixed(8) < 0 && x3term.toFixed(8) < 0){
-    x2term /= -1
-    x3term /= -1;
-    p2 = 0;
-    q = 0;
-    p2ipart = Math.sqrt(x2term);
-    qipart = Math.sqrt(x3term);
-    const mult = calcmult(p2, p2ipart, q, qipart, 0);
-    r = - g2 / (8 * mult);
-    s = bq2 / (4 * aq2);
-    ipart = 1;
-  }
+  const a3 = - b;
+  const b3 = a * c - 4 * d;
+  const c3 = - a * a * d - c * c + 4 * b * d;
 
-  if(x1term.toFixed(8) > 0 && x2term.toFixed(8) < 0 && x3term.toFixed(8) == 0 && ipart == 0){
-    x2term /= -1;
-    p2 = Math.sqrt(x1term);
-    q = 0;
-    p2ipart = 0;
-    qipart = Math.sqrt(x2term);
-    const mult = calcmult(p2, p2ipart, q, qipart, 0);
-    const mult2 = calcmult(p2, p2ipart, q, qipart, 1);
-    r = - g2 / (8 * mult);
-    if(mult2 != 0){
-      //var ripart = g2/(8*mult2);
-      r = 0;
+  // cubic resolvent
+  // y^3 - b*y^2 + (ac - 4d)*y - a^2*d - c^2+4*b*d = 0
+
+  const x3 = solveCubic(a3, b3, c3);
+  let q1, q2, p1, p2, sqD, D;
+  const y = x3.slice(1).reduce((a, b) => Math.abs(a) > Math.abs(b) ? a : b, x3[0]);
+  D = y * y - 4 * d;
+  if(round(D) == 0){
+    q1 = q2 = y / 2;
+    D = a * a - 4*(b-y);
+    if(round(D) == 0) p1 = p2 = a / 2;
+    else {
+      sqD = Math.sqrt(D);
+      p1 = (a + sqD) / 2;
+      p2 = (a - sqD) / 2;
     }
-    s = bq2 / (4 * aq2);
-    ipart = 1;
+  } else {
+    sqD = Math.sqrt(D);
+    q1 = (y + sqD) / 2;
+    q2 = (y - sqD) / 2;
+    p1 = (a * q1 - c) / (q1 - q2);
+    p2 = (c - a * q2) / (q1 - q2);
   }
-
-  if(x2term.toFixed(8) == 0 && x3term.toFixed(8) == 0 && ipart == 0){
-    p2 = Math.sqrt(x1term);
-    q = 0;
-    r = 0;
-    s = bq2 / (4 * aq2);
+  const ret = [];
+  // solving quadratic eq. - x^2 + p1*x + q1 = 0
+  D = p1 * p1 - 4 * q1;
+  if(D >= 0){
+    sqD = Math.sqrt(D);
+    ret.push((-p1 + sqD) / 2);
+    ret.push((-p1 - sqD) / 2);
   }
-
-  if(ipart != 0){
-    return [
-      [
-        eval((p2 + q + r - s).toFixed(8)),
-        eval((p2ipart + qipart).toFixed(8))
-      ],
-      [
-        eval((p2 - q - r - s).toFixed(8)),
-        eval((p2ipart - qipart).toFixed(8))
-      ],
-      [
-        eval((- p2 + q - r - s).toFixed(8)),
-        eval((- p2ipart + qipart).toFixed(8))
-      ],
-      [
-        eval((- p2 - q + r - s).toFixed(8)),
-        eval((- p2ipart - qipart).toFixed(8))
-      ]
-    ].filter(n => !n[1]).map(n => n[0]);
+  // solving quadratic eq. - x^2 + p2*x + q2 = 0
+  D = p2 * p2 - 4 * q2;
+  if(D >= 0){
+    sqD = Math.sqrt(D);
+    ret.push((-p2 + sqD) / 2);
+    ret.push((-p2 - sqD) / 2);
   }
-
-  if(perfectbiquadratic == 1) return [];
-
-  return [];
+  return ret.filter((i, j, k) => k.indexOf(i) == j);
 }
 
-function solve(a, b, c, d, e){
-  return _solve(a, b, c, d, e).filter((i, j, k) => k.indexOf(i) == j);
+function clamp(num, down, up){
+  return num < down ? down : (num > up ? up : num);
 }
-
 
 module.exports = {
-  solveQuartic: solve, Vec3D,
-  Ray, Quat
+  solveQuartic, solveCubic, Vec3D,
+  Ray, Quat, clamp, precision
 };

@@ -1,20 +1,9 @@
-const { solveQuartic, Vec3D, Ray, Quat } = require("./math.js");
-const { Movable } = require("./world.js");
-const { RadialCollider, PlaneCollider, PointsCollider } = require("./collision.js");
+const { solveQuartic, Vec3D, Ray, Quat, precision } = require("./math.js");
+const { OrigMovable } = require("./world.js");
 
-class Shape extends Movable {
+class Shape extends OrigMovable {
   constructor(cords, orig){
-    super(cords);
-
-    this.orig = orig ?? cords;
-  }
-
-  rotate(rot){
-    super.rotate(rot);
-    // rotate center around orig
-    this.cords = this.cords.sub(this.orig)
-      .rotate(rot.unitNorm).add(this.orig);
-    return this;
+    super(cords, orig);
   }
 }
 
@@ -25,7 +14,6 @@ class ImplicitShape extends Shape {
 }
 
 class Sphere extends ImplicitShape {
-  collider = RadialCollider;
 
   constructor(cords, orig, radius){
     super(cords, orig);
@@ -43,12 +31,12 @@ class Sphere extends ImplicitShape {
     if(D > 0){
       return [
         Math.round(
-          ((- b + Math.sqrt(D)) / (2 * a)) * 1e7) / 1e7,
+          ((- b + Math.sqrt(D)) / (2 * a)) * precision) / precision,
         Math.round(
-          ((- b - Math.sqrt(D)) / (2 * a)) * 1e7) / 1e7
+          ((- b - Math.sqrt(D)) / (2 * a)) * precision) / precision
       ];
     } else if(D == 0){
-      return [Math.round((- b / (2 * a)) * 1e7) / 1e7];
+      return [Math.round((- b / (2 * a)) * precision) / precision];
     } else return [];
   }
 
@@ -61,8 +49,48 @@ class Sphere extends ImplicitShape {
   }
 }
 
+class Torus extends ImplicitShape {
+
+  constructor(cords, orig, inner_radius, outer_radius){
+    super(cords, orig);
+    this.inner_radius = inner_radius;
+    this.outer_radius = outer_radius;
+  }
+
+  intersects(ray){
+    const r = this.outer_radius;
+    const R = this.inner_radius;
+    const S = ray.orig.sub(this.cords).rotate(this.rotation);
+    const v = ray.dir.rotate(this.rotation);
+
+    const G = 4 * R * R * (v.x * v.x + v.y * v.y);
+    const H = 8 * R * R * (S.x * v.x + S.y * v.y);
+    const I = 4 * R * R * (S.x * S.x + S.y * S.y);
+    const J = v.dot(v);
+    const K = 2 * S.dot(v);
+    const L = S.dot(S) + (R * R - r * r);
+
+    const A = J * J;
+    const B = 2 * J * K;
+    const C = 2 * J * L + K * K - G;
+    const D = 2 * K * L - H;
+    const E = L * L - I;
+
+    const t = solveQuartic(A, B, C, D, E);
+
+    return t;
+  }
+
+  surface(ray, point){
+    const P = point.sub(this.cords);
+    const Ps = new Vec3D(point.x, point.y, 0);
+    const Q = Ps.unit.mul(this.inner_radius);
+    const N = P.sub(Q);
+    return N.unit.rotate(this.rotation);
+  }
+}
+
 class Plane extends ImplicitShape {
-  collider = PlaneCollider;
 
   constructor(cords, orig, normal){
     super(cords, orig);
@@ -94,7 +122,6 @@ class Plane extends ImplicitShape {
 }
 
 class Parallelogram extends Plane {
-  collider = PointsCollider;
 
   constructor(cords, orig, p, q){
     super(cords, orig, p.cross(q).unit);
@@ -136,13 +163,14 @@ class Parallelogram extends Plane {
     return [
       this.cords,
       this.cords.add(this.p),
-      this.cords.add(this.q),
-      this.cords.add(this.p).add(this.q)
+      this.cords.add(this.p).add(this.q),
+      this.cords.add(this.q)
     ];
   }
 }
 
 class Disc extends Plane {
+
   constructor(cords, orig, normal, radius){
     super(cords, orig, normal);
     this.radius = radius;
@@ -164,7 +192,6 @@ class Disc extends Plane {
 
 
 class Polygon extends Plane {
-  collider = PointsCollider;
 
   constructor(orig, points){
 
@@ -247,6 +274,7 @@ class Polygon extends Plane {
 }
 
 class ComposedShape extends Shape {
+
   constructor(cords, orig, shapes){
     super(cords, orig);
     shapes.forEach(shape => shape.orig = cords);
@@ -282,7 +310,7 @@ class ComposedShape extends Shape {
       if(t == Infinity) continue;
       if(ray.point(t).equals(point)) return shape.surface(ray, point);
     }
-    const l = ray.dir.mul(- 1);
+    const l = ray.dir.mul(-1);
     let a = new Vec3D(1, 0, 0);
     if(a.dot(l) == 0) a = new Vector(0, 1, 0);
     return l.cross(a);
@@ -290,8 +318,6 @@ class ComposedShape extends Shape {
 }
 
 class Parallelepiped extends ComposedShape {
-  collider = PointsCollider;
-
   constructor(cords, orig, p, q, r){
     const shapes = [
       new Parallelogram(cords, null, p, q),
@@ -351,4 +377,4 @@ class Parallelepiped extends ComposedShape {
   }
 }
 
-module.exports = { Sphere, Parallelogram, Disc, Polygon, Plane, Parallelepiped };
+module.exports = { Sphere, Parallelogram, Disc, Polygon, Plane, Parallelepiped, Torus };

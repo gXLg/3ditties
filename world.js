@@ -29,39 +29,52 @@ class Movable {
   }
   moveGlobal(vec){
     this.cords = this.cords.add(vec);
+    return vec;
   }
   moveLocal(vec){
-    this.moveGlobal(vec.rotate(this.rotation));
+    return this.moveGlobal(vec.rotate(this.rotation));
   }
   moveTo(pt){
-    this.moveGlobal(pt.sub(this.cords));
+    return this.moveGlobal(pt.sub(this.cords));
   }
   rotate(rot){
     this.rotation = this.rotation.mul(rot.unitNorm);
   }
 }
 
+
+class OrigMovable extends Movable {
+  constructor(cords, orig){
+    super(cords);
+    this.orig = orig ?? cords;
+  }
+
+  rotate(rot){
+    super.rotate(rot);
+    // rotate center around orig
+    this.cords = this.cords.sub(this.orig)
+      .rotate(rot.unitNorm).add(this.orig);
+    return this;
+  }
+
+  moveGlobal(vec){
+    super.moveGlobal(vec);
+    this.orig = this.orig.add(vec);
+    return vec;
+  }
+}
+
 class WorldObject extends Movable {
-  constructor(pos, light, collider, visual){
+  constructor(pos, light, visual){
     super(pos);
     this.light = light ?? null;
     this.visual = visual ?? null;
-    this.collider = collider ?? null;
   }
   moveGlobal(vec){
-    super.moveGlobal(vec);
+    vec = super.moveGlobal(vec);
     this.light?.moveGlobal(vec);
     this.visual?.moveGlobal(vec);
-  }
-  moveLocal(vec){
-    super.moveLocal(vec);
-    this.light?.moveLocal(vec);
-    this.visual?.moveLocal(vec);
-  }
-  moveTo(pt){
-    super.moveTo(pt);
-    this.light?.moveTo(pt);
-    this.visual?.moveTo(pt);
+    return vec;
   }
   rotate(rot){
     super.rotate(rot);
@@ -70,44 +83,15 @@ class WorldObject extends Movable {
   }
 }
 
-class ColliderObject extends WorldObject {
-  constructor(object, world){
-    super(object.cords, null, new object.collider(object), object);
-    this.world = world;
-  }
-  moveGlobal(vec){
-    const dd = this.world.collider()
-      .filter(c => c != this.collider)
-      .map(c => this.collider.collides(c, vec));
-    const ff = [1];
-    for(const d of dd){
-      // not >=0 because that handles case of touching objects perfectly
-      const n = d.filter(i => i > 0);
-      // behind object
-      if(!n.length) continue;
-      // inside object
-      if((n.length % 2) && (d.length - n.length)){
-        ff.push(0);
-        break;
-      }
-      const f = Math.min(...n);
-      // can fully move or can move only partially
-      ff.push(f < 1 ? f : 1);
-    }
-    vec = vec.mul(Math.min(...ff));
-    super.moveGlobal(vec);
-  }
-}
-
 class LightObject extends WorldObject {
   constructor(cords){
-    super(cords, new LightSource(cords), null, null);
+    super(cords, new LightSource(cords), null );
   }
 }
 
-class GhostObject extends WorldObject {
+class VisualObject extends WorldObject {
   constructor(object){
-    super(object.cords, null, null, object);
+    super(object.cords, null, object);
   }
 }
 
@@ -119,6 +103,6 @@ class LightSource extends Movable {
 
 module.exports = {
   World, Movable, WorldObject,
-  LightObject, GhostObject,
-  ColliderObject
+  LightObject, VisualObject,
+  OrigMovable
 };

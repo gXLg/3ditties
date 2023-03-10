@@ -1,10 +1,10 @@
 const { Vec3D, Ray, Quat } = require("./math.js");
-const { Movable } = require("./world.js");
+const { OrigMovable } = require("./world.js");
 
-class Camera extends Movable {
-  constructor(width, height, fov, world){
+class Camera extends OrigMovable {
+  constructor(cords, orig, width, height, fov, world){
 
-    super(new Vec3D(0, 0, height / 2));
+    super(cords ?? new Vec3D(0, 0, height / 2), orig);
 
     this.width = width;
     this.height = height;
@@ -97,10 +97,16 @@ class Screen {
   constructor(width, height){
     this.width = width;
     this.height = height;
+
+    this.labels = [];
   }
 
   setCamera(camera){
     this.camera = camera;
+  }
+
+  addLabel(label){
+    this.labels.push(label);
   }
 
   renderPixel(screenX, screenY){
@@ -111,10 +117,36 @@ class Screen {
 
   render(){
     const rows = ["_"];
+
+    const text = { };
+    for(const label of this.labels){
+      const l = label.label();
+      let x = label.screenX;
+      let y = label.screenY;
+      const sx = x;
+      const sy = y;
+      let firstLine = true;
+      for(const ch of l){
+        for(let dx = -0.5; dx < 1; dx += 0.5)
+          for(let dy = -1; dy < 2; dy ++)
+            if(!([x + dx, y + dy] in text))
+              text[[x + dx, y + dy]] = " ";
+        if(ch == "\n"){
+          firstLine = false;
+          y ++;
+          x = xs;
+          continue;
+        }
+        text[[x, y]] = ch;
+        x += 0.5;
+      }
+    }
+
     for(let y = 0; y < this.height; y ++){
       const row = ["|"];
-      for(let x = 0; x < this.width; x += 0.5)
-        row.push(this.renderPixel(x, y));
+      for(let x = 0; x < this.width; x += 0.5){
+        row.push(text[[x, y]] ?? this.renderPixel(x, y));
+      }
       row.push("|");
       rows.push(row.join(""));
     }
@@ -122,4 +154,26 @@ class Screen {
   }
 }
 
-module.exports = { Camera, Screen };
+class Label {
+  constructor(screenX, screenY, text, ...args){
+    this.text = text;
+    this.args = args;
+    this.screenX = screenX;
+    this.screenY = screenY;
+  }
+
+  format(...args){
+    this.args = args;
+  }
+
+  label(){
+    let text = this.text;
+    for(const arg of this.args){
+      text = text.replace(/(?<!\\)(?:(\\\\)*)%/, arg);
+    }
+    text = text.replace(/(?<!\\)(?:(\\\\)*)%/g, "");
+    return text;
+  }
+}
+
+module.exports = { Camera, Screen, Label };
