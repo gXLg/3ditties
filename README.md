@@ -30,6 +30,7 @@ Currently supported features:
 * ANSI Escapes for fast canvas redrawing
 * FPS and Tick Skip statistics
 * Well structured system of world objects
+* Formatted Labels to output text on the screen
 
 ## Update!
 
