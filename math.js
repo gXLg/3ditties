@@ -290,5 +290,5 @@ function clamp(num, down, up){
 
 module.exports = {
   solveQuartic, solveCubic, Vec3D,
-  Ray, Quat, clamp, precision
+  Ray, Quat, clamp, precision, round
 };

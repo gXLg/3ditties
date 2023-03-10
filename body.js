@@ -1,4 +1,4 @@
-const { solveQuartic, Vec3D, Ray, Quat, precision } = require("./math.js");
+const { solveQuartic, Vec3D, Ray, Quat, round } = require("./math.js");
 const { OrigMovable } = require("./world.js");
 
 class Shape extends OrigMovable {
@@ -30,13 +30,11 @@ class Sphere extends ImplicitShape {
 
     if(D > 0){
       return [
-        Math.round(
-          ((- b + Math.sqrt(D)) / (2 * a)) * precision) / precision,
-        Math.round(
-          ((- b - Math.sqrt(D)) / (2 * a)) * precision) / precision
+        round((- b + Math.sqrt(D)) / (2 * a)),
+        round((- b - Math.sqrt(D)) / (2 * a))
       ];
     } else if(D == 0){
-      return [Math.round((- b / (2 * a)) * precision) / precision];
+      return [round(- b / (2 * a))];
     } else return [];
   }
 
