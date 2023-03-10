@@ -11,7 +11,7 @@ To see the progress with your own eyes
 write `node .` in your terminal.
 
 Movement inside the simulation is `WASD`, rotation uses `QE`,
-move the floating cube up and down with `IJ` respectively.
+move the floating demo object up and down with `IJ` respectively.
 To exit the 3D engine, type the letter `X`.
 
 Currently supported features:
@@ -33,7 +33,7 @@ Currently supported features:
 
 ## Update!
 
-Following things are not actual. The work on physic will be aborted
+Following things are not actual. The work on physics will be aborted
 and the project will be reverted to purely graphic module.
 This includes collision, any gravity and some code files.
 
